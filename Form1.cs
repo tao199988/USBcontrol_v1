@@ -12,8 +12,10 @@ namespace USBcontrol_v1
 {
     public partial class Form1 : Form
     {
+        int a;
         public Form1()
         {
+            Console.WriteLine("Test" + a);
             InitializeComponent();
         }
     }
