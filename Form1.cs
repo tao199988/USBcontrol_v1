@@ -42,7 +42,7 @@ namespace USBcontrol_v1
 
         delegate void ExceptionCallback();
         ExceptionCallback handleException;
-
+        string Datashow = null;
         public Form1()
         {
             InitializeComponent();
@@ -74,116 +74,122 @@ namespace USBcontrol_v1
 
         private void StatusUpdate()
         {
+            
             if(bRunning == false) return;
-            if (Inbuffer.Count>0)
+            for (; Inbuffer.Count > 0;)
             {
-                string Datashow = BitConverter.ToString(Inbuffer.Dequeue());
-                TBox_ShowReceiveData.AppendText(Datashow + Environment.NewLine);
+                Console.WriteLine(Inbuffer.Count);
+                if (Inbuffer.Count > 0)
+                {
+                    //string Datashow = BitConverter.ToString(Inbuffer.Dequeue());
+                    Datashow += BitConverter.ToString(Inbuffer.Dequeue());
+                    //TBox_ShowReceiveData.AppendText(Datashow + Environment.NewLine);
+                }
             }
+            TBox_ShowReceiveData.AppendText(Datashow + Environment.NewLine);
+            TBox_ShowReceiveData.AppendText(Environment.NewLine);
+            Datashow = null;
         }
 
         private void SetDevice()
         {
             int nCurSelection = 0;
-            if(Cmb_DeviceConnect.Items.Count>0)
+            if (cboDeviceConnected.Items.Count > 0)
             {
-                nCurSelection = Cmb_DeviceConnect.SelectedIndex;
-                Cmb_DeviceConnect.Items.Clear();
-                Cmb_INEndpoint.Items.Clear();
-                Cmb_OutEndPoint.Items.Clear();
+                nCurSelection = cboDeviceConnected.SelectedIndex;
+                cboDeviceConnected.Items.Clear();
+                cboINEndpoint.Items.Clear();
+                cboOutEndPoint.Items.Clear();
+                outCount = 0;
+                inCount = 0;
 
-                outCount = inCount = 0;
-
-                BytesOutLabel.Text = outCount.ToString();
-                BytesInLabel.Text = inCount.ToString();
             }
-            int DeviceCnt = usbDevices.Count;
-
-            for(int nCount =0; nCount < DeviceCnt; nCount++)
+            int nDeviceList = usbDevices.Count;
+            for (int nCount = 0; nCount < nDeviceList; nCount++)
             {
                 USBDevice fxDevice = usbDevices[nCount];
-                String str = null;
-                str = "(0x" + fxDevice.VendorID.ToString("X4") + " - 0x" + fxDevice.ProductID.ToString("X4") + ") " + fxDevice.FriendlyName;
-                Cmb_DeviceConnect.Items.Add(str);
+                String strmsg;
+                strmsg = "(0x" + fxDevice.VendorID.ToString("X4") + " - 0x" + fxDevice.ProductID.ToString("X4") + ") " + fxDevice.FriendlyName;
+                cboDeviceConnected.Items.Add(strmsg);
             }
 
-            if (Cmb_DeviceConnect.Items.Count > 0)
-                Cmb_DeviceConnect.SelectedIndex = nCurSelection;
+            if (cboDeviceConnected.Items.Count > 0)
+                cboDeviceConnected.SelectedIndex = nCurSelection;
 
-            loopDevice = usbDevices[Cmb_DeviceConnect.SelectedIndex] as CyUSBDevice;
+            loopDevice = usbDevices[cboDeviceConnected.SelectedIndex] as CyUSBDevice;
 
-            //Btn_SendCmd.Enabled = (loopDevice != null);
-            if(loopDevice != null)
-            {
-                Btn_SendCmd.Enabled = true;
+            Btn_SendCmd.Enabled = (loopDevice != null);
+
+            if (loopDevice != null)
                 Text = loopDevice.FriendlyName;
-                GetEndpointsOfNode(loopDevice.Tree);
-            }
             else
                 Text = "C# Bulkloop - no device";
-            if (Cmb_INEndpoint.Items.Count > 0) Cmb_INEndpoint.SelectedIndex = 0;
-            if (Cmb_OutEndPoint.Items.Count > 0) Cmb_OutEndPoint.SelectedIndex = 0;
 
+            if (loopDevice != null) GetEndpointsOfNode(loopDevice.Tree);
+            if (cboINEndpoint.Items.Count > 0) cboINEndpoint.SelectedIndex = 0;
+            if (cboOutEndPoint.Items.Count > 0) cboOutEndPoint.SelectedIndex = 0;
+            // Set the IN and OUT endpoints per the selected radio buttons.
             ConstructEndpoints();
         }
 
         private void GetEndpointsOfNode(TreeNode devTree)
         {
-            Cmb_INEndpoint.Items.Clear();
-            Cmb_OutEndPoint.Items.Clear();
+            cboINEndpoint.Items.Clear();
+            cboOutEndPoint.Items.Clear();
 
             foreach (TreeNode node in devTree.Nodes)
             {
-                if(node.Nodes.Count>0)
-                {
+                if (node.Nodes.Count > 0)
                     GetEndpointsOfNode(node);
-                }
                 else
                 {
-                    CyBulkEndPoint ept = node.Tag as CyBulkEndPoint;
+                    CyUSBEndPoint ept = node.Tag as CyUSBEndPoint;
                     if (ept == null)
                     {
-                        return;
+                        //return;
                     }
                     else if (node.Text.Contains("Bulk in"))
                     {
                         CyUSBInterface ifc = node.Parent.Tag as CyUSBInterface;
                         string s = string.Format("ALT-{0}, {1} Byte {2}", ifc.bAlternateSetting, ept.MaxPktSize, node.Text);
-                        Cmb_INEndpoint.Items.Add(s);
+                        cboINEndpoint.Items.Add(s);
                     }
                     else if (node.Text.Contains("Bulk out"))
                     {
                         CyUSBInterface ifc = node.Parent.Tag as CyUSBInterface;
                         string s = string.Format("ALT-{0}, {1} Byte {2}", ifc.bAlternateSetting, ept.MaxPktSize, node.Text);
-                        Cmb_OutEndPoint.Items.Add(s);
+                        cboOutEndPoint.Items.Add(s);
                     }
+
                 }
             }
         }
 
         private void ConstructEndpoints()
         {
-            if (loopDevice != null && Cmb_INEndpoint.Items.Count>0 && Cmb_OutEndPoint.Items.Count>0)
+            if (loopDevice != null && cboOutEndPoint.Items.Count > 0 && cboINEndpoint.Items.Count > 0)
             {
-                string sAltOut = Cmb_OutEndPoint.Text.Substring(4, 1); //CyUSBInterface.bAlternateSetting
-                byte outAltInterface = Convert.ToByte(sAltOut);
 
-                string sAltIn = Cmb_INEndpoint.Text.Substring(4, 1); //CyUSBInterface.bAlternateSetting
-                byte inAltInterface = Convert.ToByte(sAltIn);
+                string sAltOut = cboOutEndPoint.Text.Substring(4, 1);
+                byte outAltInferface = Convert.ToByte(sAltOut);
 
-                if(inAltInterface != outAltInterface)
+                string sAltIn = cboINEndpoint.Text.Substring(4, 1);
+                byte inAltInferface = Convert.ToByte(sAltIn);
+
+                if (outAltInferface != inAltInferface)
                 {
                     Text = "Output Endpoint and Input Endpoint should present in the same ALT interface";
                     Btn_SendCmd.Enabled = false;
                     return;
                 }
 
-                int aX = Cmb_INEndpoint.Text.LastIndexOf("0x");
-                string sAddr = Cmb_INEndpoint.Text.Substring(aX, 4);
+                // Get the endpoint
+                int aX = cboINEndpoint.Text.LastIndexOf("0x");
+                string sAddr = cboINEndpoint.Text.Substring(aX, 4);
                 byte addrIn = (byte)Util.HexToInt(sAddr);
 
-                aX = Cmb_OutEndPoint.Text.LastIndexOf("0x");
-                sAddr = Cmb_OutEndPoint.Text.Substring(aX, 4);
+                aX = cboOutEndPoint.Text.LastIndexOf("0x");
+                sAddr = cboOutEndPoint.Text.Substring(aX, 4);
                 byte addrOut = (byte)Util.HexToInt(sAddr);
 
                 outEndpoint = loopDevice.EndPointOf(addrOut) as CyBulkEndPoint;
@@ -191,7 +197,15 @@ namespace USBcontrol_v1
 
                 if ((outEndpoint != null) && (inEndpoint != null))
                 {
-                    if ((inEndpoint.Attributes & 0x03) != 0x02 || (outEndpoint.Attributes & 0x03/*0,1 bit for type of transfer*/) != 0x02/*Bulk endpoint*/)
+                    //make sure that the device configuration doesn't contain the other than bulk endpoint
+                    if ((outEndpoint.Attributes & 0x03/*0,1 bit for type of transfer*/) != 0x02/*Bulk endpoint*/)
+                    {
+                        Text = "Device Configuration mismatch";
+                        Btn_SendCmd.Enabled = false;
+                        return;
+
+                    }
+                    if ((inEndpoint.Attributes & 0x03) != 0x02)
                     {
                         Text = "Device Configuration mismatch";
                         Btn_SendCmd.Enabled = false;
@@ -202,36 +216,35 @@ namespace USBcontrol_v1
                 }
                 else
                 {
+
                     Text = "Device Configuration mismatch";
                     Btn_SendCmd.Enabled = false;
                     return;
                 }
+
             }
         }
 
-        private void Cmb_DeviceConnect_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            SetDevice();
-        }
-
+ 
         private void Btn_SendCmd_Click(object sender, EventArgs e)
         {
             int outlen = 128, value;
-            bool bResult;
+            bool bResult = false;
             byte[] Startbuffer = new byte[outlen];
             byte[] Stopbuffer = new byte[outlen];
             Bufsz = inEndpoint.MaxPktSize * 2;
             // send AAAA
             if (!bSending)
             {
-                bRunning = bSending = Btn_SendCmd.Enabled = false;
-                value = 170;
+                bRunning = false;
+                bSending = true;
+               value = 170;
                 SetoutputDatat(ref Startbuffer,ref outlen, ref value);
                 bResult = outEndpoint.XferData(ref Startbuffer,ref outlen);
                 if(bResult)
                 {
                     outCount++;
-                    TBox_ShowReceiveData.Text = "Output XferData Success! \n\r";
+                    TBox_ShowReceiveData.AppendText ("Output XferData Success!" + "AA" + Environment.NewLine);
                 }
                 bResult = false;
                 Btn_StrReceiveData.Enabled = true;
@@ -239,14 +252,14 @@ namespace USBcontrol_v1
             else
             {
                 bRunning = false;
-                bSending = true;
+                bSending = false;
                 value = 187;
                 SetoutputDatat(ref Stopbuffer, ref outlen, ref value);
                 bResult = outEndpoint.XferData(ref Stopbuffer, ref outlen);
                 if (bResult)
                 {
                     outCount++;
-                    TBox_ShowReceiveData.Text = "Output XferData Success! \n\r";
+                    TBox_ShowReceiveData.AppendText("Output XferData Success!" + "BB" + Environment.NewLine);
                 }
                 bResult = false;
                 Btn_StrReceiveData.Enabled = false;
@@ -385,7 +398,7 @@ namespace USBcontrol_v1
 
             while(j<QueueSz)
             {
-                cBufs[j] = new byte[Math.Max(CyConst.OverlapSignalAllocSize, sizeof(OVERLAPPED)) + ((inEndpoint.XferMode == XMODE.BUFFERED) ? Bufsz : 0)];
+                cBufs[j] = new byte[CyConst.SINGLE_XFER_LEN  + ((inEndpoint.XferMode == XMODE.BUFFERED) ? Bufsz : 0)];
                 xBufs[j] = new byte[Bufsz];
 
                 for (int iIndex = 0; iIndex < Bufsz; iIndex++)
@@ -416,33 +429,32 @@ namespace USBcontrol_v1
                     }
                     j++;
                 }
-
-                XferData(cBufs, xBufs, oLaps, handleOverlap);
-
-                unsafe
-                {
-                    for (nLocalCount = 0; nLocalCount < QueueSz; nLocalCount++)
-                    {
-                        CyUSB.OVERLAPPED ovLapStatus = new CyUSB.OVERLAPPED();
-                        ovLapStatus = (CyUSB.OVERLAPPED)Marshal.PtrToStructure(handleOverlap[nLocalCount].AddrOfPinnedObject(), typeof(CyUSB.OVERLAPPED));
-                        PInvoke.CloseHandle(ovLapStatus.hEvent);
-
-                        /*////////////////////////////////////////////////////////////////////////////////////////////
-                         * 
-                         * Release the pinned allocation handles.
-                         * 
-                        ////////////////////////////////////////////////////////////////////////////////////////////*/
-                        bufSingleTransfer[nLocalCount].Free();
-                        bufDataAllocation[nLocalCount].Free();
-                        handleOverlap[nLocalCount].Free();
-
-                        cBufs[nLocalCount] = null;
-                        xBufs[nLocalCount] = null;
-                        oLaps[nLocalCount] = null;
-                    }
-                }
-                GC.Collect();
             }
+            XferData(cBufs, xBufs, oLaps, handleOverlap);
+
+            unsafe
+            {
+                for (nLocalCount = 0; nLocalCount < QueueSz; nLocalCount++)
+                {
+                    CyUSB.OVERLAPPED ovLapStatus = new CyUSB.OVERLAPPED();
+                    ovLapStatus = (CyUSB.OVERLAPPED)Marshal.PtrToStructure(handleOverlap[nLocalCount].AddrOfPinnedObject(), typeof(CyUSB.OVERLAPPED));
+                    PInvoke.CloseHandle(ovLapStatus.hEvent);
+
+                    /*////////////////////////////////////////////////////////////////////////////////////////////
+                     * 
+                     * Release the pinned allocation handles.
+                     * 
+                    ////////////////////////////////////////////////////////////////////////////////////////////*/
+                    bufSingleTransfer[nLocalCount].Free();
+                    bufDataAllocation[nLocalCount].Free();
+                    handleOverlap[nLocalCount].Free();
+
+                    cBufs[nLocalCount] = null;
+                    xBufs[nLocalCount] = null;
+                    oLaps[nLocalCount] = null;
+                }
+            }
+            GC.Collect();
         }
 
         public unsafe void XferData(byte[][] cBufs, byte[][] xBufs, byte[][] oLaps, GCHandle[] handleOverlap)
@@ -473,6 +485,8 @@ namespace USBcontrol_v1
                 {
                     if (xBufs[k] != null)
                         Inbuffer.Enqueue(xBufs[k]);
+                    //Console.WriteLine(BitConverter.ToString(xBufs[k]));
+                    //TBox_ShowReceiveData.AppendText(xBufs[k] + Environment.NewLine);
                 }
 
                 len = Bufsz;
@@ -519,14 +533,19 @@ namespace USBcontrol_v1
 
         }
 
-        private void Cmb_OutEndPoint_SelectedIndexChanged(object sender, EventArgs e)
+        private void cboINEndpoint_SelectionChangeCommitted(object sender, EventArgs e)
         {
             ConstructEndpoints();
         }
 
-        private void Cmb_INEndpoint_SelectedIndexChanged(object sender, EventArgs e)
+        private void cboOutEndPoint_SelectionChangeCommitted(object sender, EventArgs e)
         {
             ConstructEndpoints();
+        }
+
+        private void cboDeviceConnected_SelectionChangeCommitted(object sender, EventArgs e)
+        {
+            SetDevice();
         }
     }
 

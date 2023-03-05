@@ -33,11 +33,11 @@ namespace USBcontrol_v1
             this.Btn_StrReceiveData = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.Cmb_INEndpoint = new System.Windows.Forms.ComboBox();
+            this.cboINEndpoint = new System.Windows.Forms.ComboBox();
             this.label7 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
-            this.Cmb_OutEndPoint = new System.Windows.Forms.ComboBox();
-            this.Cmb_DeviceConnect = new System.Windows.Forms.ComboBox();
+            this.cboOutEndPoint = new System.Windows.Forms.ComboBox();
+            this.cboDeviceConnected = new System.Windows.Forms.ComboBox();
             this.BytesInLabel = new System.Windows.Forms.Label();
             this.BytesOutLabel = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -77,10 +77,10 @@ namespace USBcontrol_v1
             // 
             // groupBox2
             // 
-            this.groupBox2.Controls.Add(this.Cmb_INEndpoint);
+            this.groupBox2.Controls.Add(this.cboINEndpoint);
             this.groupBox2.Controls.Add(this.label7);
             this.groupBox2.Controls.Add(this.label5);
-            this.groupBox2.Controls.Add(this.Cmb_OutEndPoint);
+            this.groupBox2.Controls.Add(this.cboOutEndPoint);
             this.groupBox2.Location = new System.Drawing.Point(20, 67);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(354, 89);
@@ -88,15 +88,15 @@ namespace USBcontrol_v1
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = " Endpoint Pair (Out / In) ";
             // 
-            // Cmb_INEndpoint
+            // cboINEndpoint
             // 
-            this.Cmb_INEndpoint.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.Cmb_INEndpoint.FormattingEnabled = true;
-            this.Cmb_INEndpoint.Location = new System.Drawing.Point(97, 25);
-            this.Cmb_INEndpoint.Name = "Cmb_INEndpoint";
-            this.Cmb_INEndpoint.Size = new System.Drawing.Size(247, 20);
-            this.Cmb_INEndpoint.TabIndex = 6;
-            this.Cmb_INEndpoint.SelectedIndexChanged += new System.EventHandler(this.Cmb_INEndpoint_SelectedIndexChanged);
+            this.cboINEndpoint.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboINEndpoint.FormattingEnabled = true;
+            this.cboINEndpoint.Location = new System.Drawing.Point(97, 25);
+            this.cboINEndpoint.Name = "cboINEndpoint";
+            this.cboINEndpoint.Size = new System.Drawing.Size(247, 20);
+            this.cboINEndpoint.TabIndex = 6;
+            this.cboINEndpoint.SelectionChangeCommitted += new System.EventHandler(this.cboINEndpoint_SelectionChangeCommitted);
             // 
             // label7
             // 
@@ -116,25 +116,25 @@ namespace USBcontrol_v1
             this.label5.TabIndex = 3;
             this.label5.Text = "Out Endpoints";
             // 
-            // Cmb_OutEndPoint
+            // cboOutEndPoint
             // 
-            this.Cmb_OutEndPoint.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.Cmb_OutEndPoint.FormattingEnabled = true;
-            this.Cmb_OutEndPoint.Location = new System.Drawing.Point(97, 59);
-            this.Cmb_OutEndPoint.Name = "Cmb_OutEndPoint";
-            this.Cmb_OutEndPoint.Size = new System.Drawing.Size(247, 20);
-            this.Cmb_OutEndPoint.TabIndex = 2;
-            this.Cmb_OutEndPoint.SelectedIndexChanged += new System.EventHandler(this.Cmb_OutEndPoint_SelectedIndexChanged);
+            this.cboOutEndPoint.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboOutEndPoint.FormattingEnabled = true;
+            this.cboOutEndPoint.Location = new System.Drawing.Point(97, 59);
+            this.cboOutEndPoint.Name = "cboOutEndPoint";
+            this.cboOutEndPoint.Size = new System.Drawing.Size(247, 20);
+            this.cboOutEndPoint.TabIndex = 2;
+            this.cboOutEndPoint.SelectionChangeCommitted += new System.EventHandler(this.cboOutEndPoint_SelectionChangeCommitted);
             // 
-            // Cmb_DeviceConnect
+            // cboDeviceConnected
             // 
-            this.Cmb_DeviceConnect.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.Cmb_DeviceConnect.FormattingEnabled = true;
-            this.Cmb_DeviceConnect.Location = new System.Drawing.Point(121, 26);
-            this.Cmb_DeviceConnect.Name = "Cmb_DeviceConnect";
-            this.Cmb_DeviceConnect.Size = new System.Drawing.Size(247, 20);
-            this.Cmb_DeviceConnect.TabIndex = 7;
-            this.Cmb_DeviceConnect.SelectedIndexChanged += new System.EventHandler(this.Cmb_DeviceConnect_SelectedIndexChanged);
+            this.cboDeviceConnected.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboDeviceConnected.FormattingEnabled = true;
+            this.cboDeviceConnected.Location = new System.Drawing.Point(121, 26);
+            this.cboDeviceConnected.Name = "cboDeviceConnected";
+            this.cboDeviceConnected.Size = new System.Drawing.Size(247, 20);
+            this.cboDeviceConnected.TabIndex = 7;
+            this.cboDeviceConnected.SelectionChangeCommitted += new System.EventHandler(this.cboDeviceConnected_SelectionChangeCommitted);
             // 
             // BytesInLabel
             // 
@@ -191,7 +191,7 @@ namespace USBcontrol_v1
             this.ClientSize = new System.Drawing.Size(395, 486);
             this.Controls.Add(this.BytesInLabel);
             this.Controls.Add(this.TBox_ShowReceiveData);
-            this.Controls.Add(this.Cmb_DeviceConnect);
+            this.Controls.Add(this.cboDeviceConnected);
             this.Controls.Add(this.BytesOutLabel);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.groupBox2);
@@ -214,11 +214,11 @@ namespace USBcontrol_v1
         private System.Windows.Forms.Button Btn_StrReceiveData;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.ComboBox Cmb_INEndpoint;
+        private System.Windows.Forms.ComboBox cboINEndpoint;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.ComboBox Cmb_OutEndPoint;
-        private System.Windows.Forms.ComboBox Cmb_DeviceConnect;
+        private System.Windows.Forms.ComboBox cboOutEndPoint;
+        private System.Windows.Forms.ComboBox cboDeviceConnected;
         private System.Windows.Forms.Label BytesInLabel;
         private System.Windows.Forms.Label BytesOutLabel;
         private System.Windows.Forms.Label label3;
