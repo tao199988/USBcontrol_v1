@@ -228,7 +228,7 @@ namespace USBcontrol_v1
  
         private void Btn_SendCmd_Click(object sender, EventArgs e)
         {
-            int outlen = 128, value;
+            int outlen = 1024, value;
             bool bResult = false;
             byte[] Startbuffer = new byte[outlen];
             byte[] Stopbuffer = new byte[outlen];
@@ -266,6 +266,7 @@ namespace USBcontrol_v1
             }
         }
 
+        //
         private void SetoutputDatat(ref byte[] outputbuffer ,ref int len,ref int FixedData)
         {
             for (int i = 0; i < outputbuffer.Length; i++)
@@ -296,12 +297,13 @@ namespace USBcontrol_v1
             }
             else
             {
+                //reset button state
                 bRunning = false;
                 Btn_SendCmd.Enabled = true;
                 Btn_StrReceiveData.Text = "Start";
 
                 if (tXfers == null) return;
-
+                //close thread
                 if (tXfers.IsAlive)
                 {
                     tXfers.Abort();
@@ -368,7 +370,7 @@ namespace USBcontrol_v1
 
             try
             {
-                LockNLoad(cmdBufs, xferBufs, ovLaps);
+                LockNLoad(cmdBufs, xferBufs, ovLaps); 
             }
             catch (NullReferenceException e)
             {
@@ -388,6 +390,7 @@ namespace USBcontrol_v1
 
         public unsafe void LockNLoad(byte[][] cBufs, byte[][] xBufs, byte[][] oLaps)
         {
+            //initial  parameter of asynchronous transfer
             int j = 0;
             int nLocalCount = j;
 
@@ -396,6 +399,8 @@ namespace USBcontrol_v1
             GCHandle[] bufDataAllocation = new GCHandle[QueueSz];
             GCHandle[] handleOverlap = new GCHandle[QueueSz];
 
+
+            
             while(j<QueueSz)
             {
                 cBufs[j] = new byte[CyConst.SINGLE_XFER_LEN  + ((inEndpoint.XferMode == XMODE.BUFFERED) ? Bufsz : 0)];
@@ -430,8 +435,10 @@ namespace USBcontrol_v1
                     j++;
                 }
             }
-            XferData(cBufs, xBufs, oLaps, handleOverlap);
+            XferData(cBufs, xBufs, oLaps, handleOverlap);//start asynchronous transfer
 
+
+            // clear parameter after bRunning=false
             unsafe
             {
                 for (nLocalCount = 0; nLocalCount < QueueSz; nLocalCount++)
@@ -484,7 +491,7 @@ namespace USBcontrol_v1
                 if(inEndpoint.FinishDataXfer(ref cBufs[k], ref xBufs[k], ref len, ref oLaps[k]))
                 {
                     if (xBufs[k] != null)
-                        Inbuffer.Enqueue(xBufs[k]);
+                        Inbuffer.Enqueue(xBufs[k]); //save different queue time data into dataqueue
                     //Console.WriteLine(BitConverter.ToString(xBufs[k]));
                     //TBox_ShowReceiveData.AppendText(xBufs[k] + Environment.NewLine);
                 }
